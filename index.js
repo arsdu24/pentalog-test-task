@@ -15,13 +15,12 @@ const payload = {
 }
 const privateKey = fs.readFileSync(privateKeyName);
 const token = jwt.sign(payload, privateKey, {algorithm: 'RS256', expiresIn: 60 * 60});
-
-const app = express()
+const refreshToken = 'oa_sand_tY6NKJNv0_DWiOjAmN5Muae99oZOrITrdQiEwde9Tfw';
 
 async function getAuthToken() {
     const body = {
-        grant_type: 'authorization_code',
-        code: 'oa_sand_gg-_wDV66wYfKKpnF4RIrpOZs2oPTwNp4TXOra5pS0g',
+        refresh_token: refreshToken,
+        grant_type: 'refresh_token',
         client_assertion_type: 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
         client_assertion: token,
         client_id
@@ -36,24 +35,17 @@ async function getAuthToken() {
     return access_token;
 }
 
-app.get('/', async (request, response) => {
-    try {
-        const token = await getAuthToken();
+async function showAccounts() {
+    const token = await getAuthToken()
 
-        console.log(token)
+    const {data: accounts} = await axios.get('https://sandbox-b2b.revolut.com/api/1.0/accounts', {
+        headers: {
+            'Authorization': `Bearer ${token}`
+        }
+    });
 
-        const {data: accounts} = await axios.get('https://sandbox-b2b.revolut.com/api/1.0/accounts', {
-            headers: {
-                'Authorization': `Bearer ${token}`
-            }
-        });
+    console.log(accounts)
+}
 
-        response.json(accounts);
-    } catch (e) {
-        response.status(500).json(e)
-    }
-})
 
-app.listen(3000, () => {
-    console.log('Server Started at port : 3000')
-})
+showAccounts();
